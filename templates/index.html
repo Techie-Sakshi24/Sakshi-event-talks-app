@@ -1,0 +1,230 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>BigQuery Release Pulse</title>
+    <meta name="description" content="A premium real-time dashboard tracking the latest updates, features, and fixes for Google Cloud BigQuery.">
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <!-- CSS Link -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+    <!-- App Container -->
+    <div class="app-container">
+        
+        <!-- Header -->
+        <header class="app-header">
+            <div class="header-left">
+                <div class="logo-container">
+                    <div class="pulse-indicator"></div>
+                    <svg class="logo-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/>
+                    </svg>
+                    <h1>BigQuery <span>Release Pulse</span></h1>
+                </div>
+            </div>
+            
+            <div class="header-right">
+                <div id="connection-status" class="status-badge live">
+                    <span class="status-dot"></span>
+                    <span class="status-text">Live</span>
+                </div>
+                <button id="refresh-btn" class="btn btn-primary" title="Refresh release notes">
+                    <svg id="spinner" class="btn-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                        <path d="M21.5 2v6h-6M21.34 15.57a10 10 0 11-.57-8.38l5.67-5.67"/>
+                    </svg>
+                    <span>Refresh</span>
+                </button>
+            </div>
+        </header>
+
+        <!-- Main Dashboard Content -->
+        <main class="dashboard-main">
+            
+            <!-- Statistics Overview -->
+            <section class="stats-overview" id="stats-panel">
+                <div class="stat-card glass-panel animate-fade-in" style="--delay: 1">
+                    <div class="stat-icon feature">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <polygon points="12 2 2 7 12 12 22 7 12 2 12 2"/>
+                            <polygon points="2 17 12 22 22 17 2 17"/>
+                            <polygon points="2 12 12 17 22 12 2 12"/>
+                        </svg>
+                    </div>
+                    <div class="stat-info">
+                        <span class="stat-label">Total Updates</span>
+                        <h2 class="stat-val" id="stat-total">-</h2>
+                    </div>
+                </div>
+
+                <div class="stat-card glass-panel animate-fade-in" style="--delay: 2">
+                    <div class="stat-icon feature-badge">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M12 2v20M17 5H9.5a3.5 3.5 0 000 7h5a3.5 3.5 0 010 7H6"/>
+                        </svg>
+                    </div>
+                    <div class="stat-info">
+                        <span class="stat-label">Features</span>
+                        <h2 class="stat-val" id="stat-features">-</h2>
+                    </div>
+                </div>
+
+                <div class="stat-card glass-panel animate-fade-in" style="--delay: 3">
+                    <div class="stat-icon change-badge">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M21.5 2v6h-6M21.34 15.57a10 10 0 11-.57-8.38l5.67-5.67"/>
+                        </svg>
+                    </div>
+                    <div class="stat-info">
+                        <span class="stat-label">Changes</span>
+                        <h2 class="stat-val" id="stat-changes">-</h2>
+                    </div>
+                </div>
+
+                <div class="stat-card glass-panel animate-fade-in" style="--delay: 4">
+                    <div class="stat-icon issue-badge">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0zM12 9v4M12 17h.01"/>
+                        </svg>
+                    </div>
+                    <div class="stat-info">
+                        <span class="stat-label">Issues</span>
+                        <h2 class="stat-val" id="stat-issues">-</h2>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Control Bar (Search & Filter) -->
+            <section class="control-bar glass-panel animate-fade-in" style="--delay: 5">
+                <div class="search-box">
+                    <svg class="search-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <circle cx="11" cy="11" r="8M21 21l-4.3-4.3"/>
+                    </svg>
+                    <input type="text" id="search-input" placeholder="Search release notes by keywords (e.g. Gemini, SQL, partition)..." autocomplete="off">
+                    <button id="clear-search-btn" class="clear-btn" style="display: none;">&times;</button>
+                </div>
+                
+                <div class="filter-group">
+                    <span class="filter-label">Filter:</span>
+                    <div class="filter-badges">
+                        <button class="filter-btn active" data-type="all">All</button>
+                        <button class="filter-btn" data-type="Feature">Features</button>
+                        <button class="filter-btn" data-type="Change">Changes</button>
+                        <button class="filter-btn" data-type="Issue">Issues</button>
+                        <button class="filter-btn" data-type="Deprecation">Deprecations</button>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Main Feed Grid -->
+            <section class="feed-grid">
+                
+                <!-- Left Pane: Feed List -->
+                <div class="feed-list-pane">
+                    <div class="pane-header">
+                        <h3>Release Notes Feed</h3>
+                        <span class="count-indicator" id="visible-count">Showing - updates</span>
+                    </div>
+                    
+                    <div class="feed-container" id="feed-container">
+                        <!-- Loading State -->
+                        <div class="loading-state">
+                            <div class="pulse-loader"></div>
+                            <p>Loading the latest release notes...</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Right Pane: Detail View -->
+                <div class="detail-pane glass-panel" id="detail-pane">
+                    <!-- Placeholder State -->
+                    <div class="detail-placeholder" id="detail-placeholder">
+                        <div class="placeholder-icon">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                                <rect x="3" y="4" width="18" height="18" rx="2" ry="2"/>
+                                <line x1="16" y1="2" x2="16" y2="6"/>
+                                <line x1="8" y1="2" x2="8" y2="6"/>
+                                <line x1="3" y1="10" x2="21" y2="10"/>
+                                <path d="M8 14h8M8 18h5"/>
+                            </svg>
+                        </div>
+                        <h3>Select an Update</h3>
+                        <p>Click on any release note card on the left to view detailed information, read full descriptions, and share to X (Twitter).</p>
+                    </div>
+
+                    <!-- Active Content State -->
+                    <div class="detail-content" id="detail-content" style="display: none;">
+                        <div class="detail-header-section">
+                            <div class="detail-meta">
+                                <span id="detail-badge" class="type-badge">Feature</span>
+                                <span id="detail-date" class="detail-date-text">June 15, 2026</span>
+                            </div>
+                            <h2 id="detail-title">Optimizing query performance in BigQuery</h2>
+                        </div>
+                        
+                        <div class="detail-body-section">
+                            <div class="description-box" id="detail-description">
+                                <!-- HTML content injected here -->
+                            </div>
+                        </div>
+
+                        <!-- Tweet Integration Section -->
+                        <div class="detail-footer-section">
+                            <div class="share-box-title">
+                                <svg class="x-icon" viewBox="0 0 24 24" fill="currentColor">
+                                    <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/>
+                                </svg>
+                                <h4>Share Update on X (Twitter)</h4>
+                            </div>
+                            <p class="share-box-subtitle">Generate a custom formatted post summarizing this release note.</p>
+                            
+                            <div class="tweet-card">
+                                <div class="tweet-header">
+                                    <img src="https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?w=80&h=80&fit=crop" alt="Profile" class="tweet-avatar">
+                                    <div class="tweet-user">
+                                        <span class="tweet-name">Google Cloud Specialist</span>
+                                        <span class="tweet-handle">@gcp_pulse</span>
+                                    </div>
+                                </div>
+                                <div class="tweet-content-preview">
+                                    <textarea id="tweet-textarea" class="tweet-input" rows="4"></textarea>
+                                </div>
+                                <div class="tweet-footer">
+                                    <div class="character-counter">
+                                        <svg class="progress-ring" width="24" height="24">
+                                            <circle class="progress-ring__circle-bg" stroke="rgba(255,255,255,0.1)" stroke-width="2" fill="transparent" r="9" cx="12" cy="12"/>
+                                            <circle id="progress-circle" class="progress-ring__circle" stroke="#1D9BF0" stroke-width="2" fill="transparent" r="9" cx="12" cy="12"/>
+                                        </svg>
+                                        <span id="char-count">280</span>
+                                    </div>
+                                    <button id="send-tweet-btn" class="btn btn-tweet">
+                                        <svg class="btn-icon" viewBox="0 0 24 24" fill="currentColor">
+                                            <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/>
+                                        </svg>
+                                        Post Update
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+        </main>
+    </div>
+
+    <!-- Toast Notification -->
+    <div id="toast" class="toast-notification">
+        <svg class="toast-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M22 11.08V12a10 10 0 11-5.93-9.14M22 4L12 14.01l-3-3"/>
+        </svg>
+        <span id="toast-message">Success! Feed updated.</span>
+    </div>
+
+    <!-- Script Link -->
+    <script src="{{ url_for('static', filename='script.js') }}"></script>
+</body>
+</html>
